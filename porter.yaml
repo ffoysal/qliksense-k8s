@@ -39,6 +39,10 @@ parameters:
     description: "Storage Class Name to be used in PVCs"
     type: string
     default: ""
+  - name: dockerRegistry
+    description: "Push to a private docker registry"
+    type: string
+    default: ""
 
 outputs:
 - name: LoadBalancer
@@ -48,12 +52,23 @@ outputs:
   - install
   - upgrade
 
+customActions:
+  about:
+    description: "About QLik Sense"
+    stateless: true
+    modifies: false
+
+about:
+  - qliksense:
+      description: "Use bundled version by default"
+      version: "bundled"
 install:
   - qliksense:
       description: "Installing: Creating patch based on CR"
       name: qliksense-operator
       cr:
         manifestsRoot: "/cnab/app"
+        dockerRegistry: "{{ bundle.parameters.dockerRegistry }}"
         configs:
         - dataKey: acceptEULA
           values:
@@ -99,6 +114,7 @@ upgrade:
       name: qliksense-operator
       cr:
         manifestsRoot: "/cnab/app"
+        dockerRegistry: "{{ bundle.parameters.dockerRegistry }}"
         configs:
         - dataKey: acceptEULA
           values:
@@ -127,6 +143,7 @@ uninstall:
       name: qliksense-operator
       cr:
         manifestsRoot: "/cnab/app"
+        dockerRegistry: "{{ bundle.parameters.dockerRegistry }}"
         configs:
         - dataKey: acceptEULA
           values:
