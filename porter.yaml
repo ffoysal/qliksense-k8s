@@ -11,15 +11,29 @@ mixins:
   - qliksense
   - kubernetes
   - exec
+  - aws
+  - helm
+
 
 
 # See https://porter.sh/wiring/#credentials
 credentials:
-  - name: kubeconfig
-    path: /root/.kube/config
-    description: "The .kubeconfig file to connect to k8s cluster"
+  - name: AWS_ACCESS_KEY_ID
+    env: AWS_ACCESS_KEY_ID
+    description: "AWS access key"
+  - name: AWS_SECRET_ACCESS_KEY
+    env: AWS_SECRET_ACCESS_KEY
+    description: "AWS Secret access key"
 
 parameters:
+  - name: cluster
+    type: string
+    default: mycluster
+    description: "Kubernetes cluster name"
+  - name: region
+    type: string
+    default: eu-west-1
+    description: "AWS region name" 
   - name: acceptEULA
     type: string
     description: "User has to accept End User License Aggrement's term to install Qliksense"
@@ -50,6 +64,16 @@ outputs:
   - upgrade
 
 install:
+  - exec:
+      description: "Installing: Setting up kubernetes cluster"
+      command: bash
+      flags:
+        c: "/enab/app/hack-setup.sh {{ bundle.parametes.cluster }} {{ bundle.parameters.region }}"
+  - exec:
+      description: "Display Cluster info"
+      command: bash
+      flags:
+        c: cat /root/.kube/config
   - qliksense:
       description: "Installing: Creating patch based on CR"
       name: qliksense-operator
@@ -133,3 +157,14 @@ uninstall:
       - deployment,services,statefulset,ingress,configmap,secrets,role,serviceaccount,rolebinding,pvc,crd
       flags:
         l: release=qliksense
+  - helm:
+      description: "Uninstalling: Delete storage class helm chart"
+      purge: true
+      releases:
+        - efs
+  - exec:
+      description: "Uninstalling: Deleteing kubernetes cluster"
+      command: bash
+      flags:
+        c: "/enab/app/hack-delete.sh {{ bundle.parametes.cluster }} {{ bundle.parameters.region }}"
+
