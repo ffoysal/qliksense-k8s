@@ -10,9 +10,6 @@ then
 fi
 
 
-echo "waiting to finish helm deletion"
-sleep 90
-
 NODEGROUP_SG=$(aws ec2 describe-security-groups --region $REGION | jq -r '.SecurityGroups | .[] | select(.GroupName | contains ("nodegroup")) | .GroupId')
 CONTROL_SG=$(aws ec2 describe-security-groups --region $REGION | jq -r '.SecurityGroups | .[] | select(.GroupName | contains ("ControlPlaneSecurityGroup")) | .GroupId')
 
@@ -33,6 +30,9 @@ do
   echo "delete mount target [$mt]"
   aws efs delete-mount-target --mount-target-id $mt --region $REGION
 done
+
+echo "waiting to finish mount target deletion"
+sleep 60
 
 echo "Deleting EFS $EFS_ID"
 aws efs delete-file-system --file-system-id $EFS_ID --region $REGION

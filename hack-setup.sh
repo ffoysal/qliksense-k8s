@@ -46,6 +46,8 @@ EFS_ID=$(aws efs create-file-system --creation-token $CLUSTER_NAME --tags Key=Na
 SUBNET_IDS=$(aws eks describe-cluster --name $CLUSTER_NAME  --region $REGION | jq -r '.cluster.resourcesVpcConfig.subnetIds | .[]')
 SECURITY_GROUP_ID=$(aws eks describe-cluster --name $CLUSTER_NAME  --region $REGION | jq -r '.cluster.resourcesVpcConfig.securityGroupIds | .[]')
 
+echo "Waiting to finish storage creation"
+sleep 45
 
 for subnet in $SUBNET_IDS
 do
@@ -61,9 +63,8 @@ aws ec2 authorize-security-group-ingress --group-id $NODEGROUP_SG --protocol tcp
 aws ec2 authorize-security-group-ingress --group-id $CONTROL_SG --protocol tcp --port 2049 --source-group $NODEGROUP_SG --region $REGION
 
 
-# Wait to finish tiller
-sleep 80
-
+echo "Waiting to finish mounting"
+sleep 40
 
 echo "ADD efs provistioner to the cluster"
 helm install --name efs stable/efs-provisioner --set efsProvisioner.efsFileSystemId=$EFS_ID,efsProvisioner.awsRegion=$REGION

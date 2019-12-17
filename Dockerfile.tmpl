@@ -46,6 +46,11 @@ COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.
 #install eksctl
 RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp && mv /tmp/eksctl /usr/local/bin
 
+#install jq
+RUN apt-get update && apt-get install jq -y
+
+#install aws-iam-authenticator
+RUN curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/aws-iam-authenticator && chmod +x ./aws-iam-authenticator && mv aws-iam-authenticator /usr/local/bin
 
 ARG BUNDLE_DIR
 COPY . $BUNDLE_DIR
