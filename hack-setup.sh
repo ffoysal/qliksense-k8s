@@ -11,7 +11,7 @@ then
 fi
 
 echo "Create cluster. It will take ~10 minutes"
-eksctl create cluster --name ${CLUSTER_NAME} --nodes-min=3  --node-volume-size=50 --nodes-max=5 --region=${REGION} --zones=${REGION}a,${REGION}b,${REGION}c
+eksctl create cluster --name ${CLUSTER_NAME} --nodes-min=5  --node-volume-size=50 --nodes-max=7 --region=${REGION} --zones=${REGION}a,${REGION}b,${REGION}c
 
 CURRENT_CLUSTER=$(kubectl config current-context)
 
@@ -22,10 +22,12 @@ then
   exit 1
 fi
 
-echo "Install HELM into the cluster"
-kubectl create -f /cnab/app/rbac-config.yaml
-echo "Initialize HELM with newly created ServiceAccount"
-helm init --upgrade --service-account tiller
+#echo "Install HELM into the cluster"
+#kubectl create -f /cnab/app/rbac-config.yaml
+#echo "Initialize HELM with newly created ServiceAccount"
+#helm init --upgrade --service-account tiller
+echo "Helm init without Tiller"
+helm init --client-only
 
 #TODO: need to find better jq query
 ROLE_NAME=$(aws iam list-roles | jq  -r '.[] | .[] | select(.RoleName | contains ("NodeInstanceRole")) | .RoleName')
@@ -47,7 +49,7 @@ SUBNET_IDS=$(aws eks describe-cluster --name $CLUSTER_NAME  --region $REGION | j
 SECURITY_GROUP_ID=$(aws eks describe-cluster --name $CLUSTER_NAME  --region $REGION | jq -r '.cluster.resourcesVpcConfig.securityGroupIds | .[]')
 
 echo "Waiting to finish storage creation"
-sleep 45
+sleep 60
 
 for subnet in $SUBNET_IDS
 do
@@ -64,7 +66,15 @@ aws ec2 authorize-security-group-ingress --group-id $CONTROL_SG --protocol tcp -
 
 
 echo "Waiting to finish mounting"
-sleep 40
+sleep 60
 
-echo "ADD efs provistioner to the cluster"
-helm install --name efs stable/efs-provisioner --set efsProvisioner.efsFileSystemId=$EFS_ID,efsProvisioner.awsRegion=$REGION
+#echo "ADD efs provistioner to the cluster"
+#helm install --name efs stable/efs-provisioner --set efsProvisioner.efsFileSystemId=$EFS_ID,efsProvisioner.awsRegion=$REGION
+
+echo "Fetch efs-provisioner"
+helm fetch stable/efs-provisioner --untar
+echo "Helm template efs and kubectl"
+helm template --name=qliksense ./efs-provisioner --set-string efsProvisioner.efsFileSystemId=$EFS_ID,efsProvisioner.awsRegion=$REGION | kubectl apply -f -
+
+echo "Waiting to stable efs provisioner...."
+sleep 90
