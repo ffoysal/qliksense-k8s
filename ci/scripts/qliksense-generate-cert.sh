@@ -40,5 +40,8 @@ data:
   tls.crt: ${crt}
   tls.key: ${key}
   tls.ca: ${ca}
-
 EOF
+
+cat tls-secret.yaml
+
+realpath tls-secret.yaml
