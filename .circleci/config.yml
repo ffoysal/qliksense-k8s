@@ -99,10 +99,13 @@ jobs:
             # Init helm tiller service account and add helm repos
             ./ci/scripts/helm-init.sh
 
+            export HOSTNAME="qliksense-elastic-infra-nginx-ingress-controller"
+            ./ci/scripts/qliksense-generate-cert.sh
+            
             # Install qliksense using operator + kustomize
             ./ci/scripts/qliksense-install.sh
 
-            export HOSTNAME="sut-nginx-ingress-controller"
+            export HOSTNAME="qliksense-elastic-infra-nginx-ingress-controller"
             ./ci/scripts/qliksense-cert-oidc.sh
       - run:
           name: check-pods-are-ready
