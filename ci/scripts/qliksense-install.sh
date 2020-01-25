@@ -17,6 +17,7 @@ check_req_env_vars
 setup_kubectl_context
 
 export root_ca=$(cat rootCA.crt)
+export idp_value=$(cat oidc-idp-config.json)
 
 cat <<EOF > cr.tmpl.yaml
 configProfile: manifests/docker-desktop
@@ -36,6 +37,10 @@ secrets:
 - secretKey: caCertificate
   values:
     qliksense: "$root_ca"
+- secretKey: idpConfigs
+  values:
+    identity-providers: "$idp_value"
+
 EOF
 ## Substitute namespace in cr.tmpl.yaml
 cat cr.tmpl.yaml | envsubst > cr.yaml
